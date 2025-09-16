@@ -129,15 +129,11 @@ class Matrix:
         _matrix = Matrix([[elem for _ in range(m)] for _ in range(n)])
         return _matrix
     def __repr__(self) -> str:
-        _ret = '( '
-        for i in range(self.n):
-            _ret += str(self.mat[i]) 
-            if i != self.n - 1:
-                _ret += ',\n'
-        _ret += ' )'
+        _ret = "(\n  " + ",\n  ".join(str(tuple(round(self.mat[i][j], 6) for j in range(self.m))) for i in range(self.n)) + "\n)" 
         return _ret
     def __str__(self) -> str:
-        return "(\n  " + ",\n  ".join(str(row) for row in self.mat) + "\n)"
+        _ret = "(\n  " + ",\n  ".join(str(tuple(round(self.mat[i][j], 6) for j in range(self.m))) for i in range(self.n)) + "\n)" 
+        return _ret
     def __add__(self: "Matrix", other: "Matrix") -> "Matrix":
         if self.n != other.n or self.m != other.m:
             raise ValueError("\u001b[31;1mРазмеры матриц не совпадают\u001b[0m")
@@ -190,7 +186,7 @@ class Matrix:
         """Транспонирование матрицы"""
         result = [[self.mat[j][i] for j in range(self.n)] for i in range(self.m)]
         return Matrix(result)
-    def det_slow(self) -> float:
+    def det(self) -> float:
         """Вычисление определителя матрицы (только для квадратных матриц)"""
         if self.n != self.m:
             raise ValueError("\u001b[31;1mОпределитель можно вычислить только для квадратной матрицы\u001b[0m")
@@ -204,7 +200,7 @@ class Matrix:
             for j in range(self.m):
                 minor = self._get_minor(0, j)
                 sign = 1 if j % 2 == 0 else -1
-                det += sign * self.mat[0][j] * minor.det_slow()
+                det += sign * self.mat[0][j] * minor.det()
             return det
     def _get_minor(self, row: float, col: float) -> "Matrix":
         """Получение минора матрицы"""
@@ -369,13 +365,97 @@ class Matrix:
         for i in range(self.n):
             new_mat[i][j] *= scalar
         self.mat = tuple(tuple(row) for row in new_mat)
-    
+    def __radd__(self, other: "Matrix") -> "Matrix":
+        """Операция сложения с другой матрицей (other + self)"""
+        return self + other
+    def __rsub__(self, other: "Matrix") -> "Matrix":
+        """Операция вычитания с другой матрицей (other - self)"""
+        return other - self
+    def __rmul__(self, other: float) -> "Matrix":
+        """Операция умножения с числом"""
+        return self * other
+    def row_add(self, i: int, j: int, scalar: float = 1) -> None:
+        """Прибавляет к строке i строку j, умноженную на скаляр"""
+        if i < 0 or i >= self.n or j < 0 or j >= self.n:
+            raise IndexError(f"\u001b[31;1mИндексы строк {i} или {j} вне диапазона [0, {self.n-1}]\u001b[0m")
+        new_mat = list(list(row) for row in self.mat)
+        for col in range(self.m):
+            new_mat[i][col] += new_mat[j][col] * scalar
+        self.mat = tuple(tuple(row) for row in new_mat)
+    def col_add(self, i: int, j: int, scalar: float = 1) -> None:
+        """Прибавляет к столбцу i столбец j, умноженный на скаляр"""
+        if i < 0 or i >= self.m or j < 0 or j >= self.m:
+            raise IndexError(f"\u001b[31;1mИндексы столбцов {i} или {j} вне диапазона [0, {self.m-1}]\u001b[0m")
+        new_mat = list(list(row) for row in self.mat)
+        for row in range(self.n):
+            new_mat[row][i] += new_mat[row][j] * scalar
+        self.mat = tuple(tuple(row) for row in new_mat)
+    def swap_rows(self, i: int, j: int) -> None:
+        """Меняет местами строки i и j"""
+        if i < 0 or i >= self.n or j < 0 or j >= self.n:
+            raise IndexError(f"\u001b[31;1mИндексы строк {i} или {j} вне диапазона [0, {self.n-1}]\u001b[0m")
+        new_mat = list(list(row) for row in self.mat)
+        new_mat[i], new_mat[j] = new_mat[j], new_mat[i]
+        self.mat = tuple(tuple(row) for row in new_mat)
+    def swap_cols(self, i: int, j: int) -> None:
+        """Меняет местами столбцы i и j"""
+        if i < 0 or i >= self.m or j < 0 or j >= self.m:
+            raise IndexError(f"\u001b[31;1mИндексы столбцов {i} или {j} вне диапазона [0, {self.m-1}]\u001b[0m")
+        new_mat = list(list(row) for row in self.mat)
+        for row in range(self.n):
+            new_mat[row][i], new_mat[row][j] = new_mat[row][j], new_mat[row][i]
+        self.mat = tuple(tuple(row) for row in new_mat)
+    def __bool__(self) -> bool:
+        """Проверка, является ли матрица нулевой (все элементы равны нулю)"""
+        return any(self.mat[i][j] != 0 for i in range(self.n) for j in range(self.m))
+    @property
+    def rows(self):
+        """
+        Итератор по строкам.
+        Каждый элемент — это копия строки в виде списка.
+        """
+        for row in self.mat:
+            yield list(row)
+    @property
+    def cols(self):
+        """
+        Итератор по столбцам.
+        Каждый элемент — это список значений соответствующего столбца.
+        """
+        for j in range(self.m):
+            yield [self.mat[i][j] for i in range(self.n)]
+    @property
+    def inv(self) -> "Matrix":
+        """Вычисление обратной матрицы (только для квадратных матриц)"""
+        if not self.is_sq():
+            raise ValueError("\u001b[31;1mОбратную матрицу можно вычислить только для квадратной матрицы\u001b[0m")
+        
+        n = self.n
+        aug = [list(self.mat[i]) + [1 if i == j else 0 for j in range(n)] for i in range(n)]
+        
+        for i in range(n):
+            pivot = aug[i][i]
+            if pivot == 0:
+                for r in range(i + 1, n):
+                    if aug[r][i] != 0:
+                        aug[i], aug[r] = aug[r], aug[i]
+                        pivot = aug[i][i]
+                        break
+            if pivot == 0:
+                raise ValueError("\u001b[31;1mМатрица вырождена и не имеет обратной\u001b[0m")
+            
+            for j in range(2 * n):
+                aug[i][j] /= pivot
+            
+            for r in range(n):
+                if r != i:
+                    factor = aug[r][i]
+                    for j in range(2 * n):
+                        aug[r][j] -= factor * aug[i][j]
+        
+        inv_mat = [row[n:] for row in aug]
+        return Matrix(inv_mat)
 if __name__ == "__main__":
-    e = Matrix([[1,2,3], [4,5,6], [7,8,9]])
+    e = Matrix([[3,2,3], [4,5,6], [7,8,9]])
     print(e)
-    e *= 2
-    print(e)
-    e //= 2
-    print(e)
-    e *= 1.3
-    print(e)
+    print(e.det())
