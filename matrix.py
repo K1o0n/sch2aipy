@@ -19,7 +19,7 @@ class Matrix:
             # Matrix[i] - возвращаем i-ю строку
             if index < 0 or index >= self.n:
                 raise IndexError(f"\u001b[31;1mИндекс строки {index} вне диапазона [0, {self.n-1}]\u001b[0m")
-            return self.mat[index]
+            return list(self.mat[index])  # Возвращаем список для возможности изменения
         
         elif isinstance(index, tuple) and len(index) == 2:
             i, j = index
@@ -28,17 +28,17 @@ class Matrix:
             if i == slice(None) and isinstance(j, (int, float)):
                 if j < 0 or j >= self.m:
                     raise IndexError(f"\u001b[31;1mИндекс столбца {j} вне диапазона [0, {self.m-1}]\u001b[0m")
-                return tuple(self.mat[row][j] for row in range(self.n))
+                return [self.mat[row][j] for row in range(self.n)]  # Возвращаем список
             
             # Matrix[i, :] - возвращаем i-ю строку
             elif isinstance(i, (int, float)) and j == slice(None):
                 if i < 0 or i >= self.n:
                     raise IndexError(f"\u001b[31;1mИндекс строки {i} вне диапазона [0, {self.n-1}]\u001b[0m")
-                return self.mat[i]
+                return list(self.mat[i])  # Возвращаем список
             
             # Matrix[:, :] - возвращаем всю матрицу
             elif i == slice(None) and j == slice(None):
-                return self.mat
+                return [list(row) for row in self.mat]  # Возвращаем список списков
             
             # Matrix[i, j] - возвращаем конкретный элемент
             elif isinstance(i, (int, float)) and isinstance(j, (int, float)):
@@ -308,48 +308,35 @@ class Matrix:
                     new_mat[i][j] *= other
             self.mat = tuple(tuple(row) for row in new_mat)
             return self
-        elif isinstance(other, tuple) and len(other) == 2:
-            # Умножение строки или столбца на число через индексацию
-            index, scalar = other
-            
-            # matrix[i, :] *= scalar - умножение строки на число
-            if isinstance(index, (int, float)) and scalar == slice(None):
-                if index < 0 or index >= self.n:
-                    raise IndexError(f"\u001b[31;1mИндекс строки {index} вне диапазона [0, {self.n-1}]\u001b[0m")
-                
-                new_mat = list(list(row) for row in self.mat)
-                for j in range(self.m):
-                    new_mat[index][j] *= scalar
-                self.mat = tuple(tuple(row) for row in new_mat)
-                return self
-            
-            # matrix[:, j] *= scalar - умножение столбца на число
-            elif index == slice(None) and isinstance(scalar, (int, float)):
-                if scalar < 0 or scalar >= self.m:
-                    raise IndexError(f"\u001b[31;1mИндекс столбца {scalar} вне диапазона [0, {self.m-1}]\u001b[0m")
-                
-                new_mat = list(list(row) for row in self.mat)
-                for i in range(self.n):
-                    new_mat[i][scalar] *= scalar
-                self.mat = tuple(tuple(row) for row in new_mat)
-                return self
-            
         raise ValueError("\u001b[31;1mНедопустимый тип для умножения с матрицей\u001b[0m")
-    def __itruediv__(self, scalar: float) -> "Matrix":
-        """Операция /= (деление на скаляр)"""
-        if scalar == 0:
-            raise ZeroDivisionError("\u001b[31;1mДеление на ноль\u001b[0m")
-        return self.__imul__(1 / scalar)
-    def __ifloordiv__(self, scalar: float) -> "Matrix":
-        """Операция //= (деление на скаляр)"""
-        if scalar == 0:
-            raise ZeroDivisionError("\u001b[31;1mДеление на ноль\u001b[0m")
-        new_mat = list(list(row) for row in self.mat)
-        for i in range(self.n):
-            for j in range(self.m):
-                new_mat[i][j] //= scalar
-        self.mat = tuple(tuple(row) for row in new_mat)
-        return self
+    def __itruediv__(self, other) -> "Matrix":
+        """Операция /= (деление на скаляр, строки или столбца)"""
+        if isinstance(other, (int, float)):
+            # Деление всей матрицы на скаляр
+            if other == 0:
+                raise ZeroDivisionError("\u001b[31;1mДеление на ноль\u001b[0m")
+            new_mat = list(list(row) for row in self.mat)
+            for i in range(self.n):
+                for j in range(self.m):
+                    new_mat[i][j] /= other
+            self.mat = tuple(tuple(row) for row in new_mat)
+            return self
+            
+        raise ValueError("\u001b[31;1mНедопустимый тип для деления с матрицей\u001b[0m")
+    def __ifloordiv__(self, other) -> "Matrix":
+        """Операция //= (целочисленное деление на скаляр, строки или столбца)"""
+        if isinstance(other, (int, float)):
+            # Деление всей матрицы на скаляр
+            if other == 0:
+                raise ZeroDivisionError("\u001b[31;1mДеление на ноль\u001b[0m")
+            new_mat = list(list(row) for row in self.mat)
+            for i in range(self.n):
+                for j in range(self.m):
+                    new_mat[i][j] //= other
+            self.mat = tuple(tuple(row) for row in new_mat)
+            return self
+            
+        raise ValueError("\u001b[31;1mНедопустимый тип для деления с матрицей\u001b[0m")
     def tolist(self) -> list[list[float]]:
         """Преобразование матрицы в список списков"""
         return [list(row) for row in self.mat]
@@ -366,7 +353,23 @@ class Matrix:
     def clear(self) -> None:
         """Очищает матрицу, заполняя её нулями"""
         self.fill(0)
-
+    def row_mult(self, i: int, scalar: float) -> None:
+        """Умножение строки i на скаляр"""
+        if i < 0 or i >= self.n:
+            raise IndexError(f"\u001b[31;1mИндекс строки {i} вне диапазона [0, {self.n-1}]\u001b[0m")
+        new_mat = list(list(row) for row in self.mat)
+        for j in range(self.m):
+            new_mat[i][j] *= scalar
+        self.mat = tuple(tuple(row) for row in new_mat)
+    def col_mult(self, j: int, scalar: float) -> None:
+        """Умножение столбца j на скаляр"""
+        if j < 0 or j >= self.m:
+            raise IndexError(f"\u001b[31;1mИндекс столбца {j} вне диапазона [0, {self.m-1}]\u001b[0m")
+        new_mat = list(list(row) for row in self.mat)
+        for i in range(self.n):
+            new_mat[i][j] *= scalar
+        self.mat = tuple(tuple(row) for row in new_mat)
+    
 if __name__ == "__main__":
     e = Matrix([[1,2,3], [4,5,6], [7,8,9]])
     print(e)
@@ -374,5 +377,5 @@ if __name__ == "__main__":
     print(e)
     e //= 2
     print(e)
-    e[1, :] *= 10
+    e *= 1.3
     print(e)
