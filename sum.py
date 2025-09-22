@@ -129,10 +129,10 @@ class Matrix:
         _matrix = Matrix([[elem for _ in range(m)] for _ in range(n)])
         return _matrix
     def __repr__(self) -> str:
-        _ret = "\n".join(" ".join(str(round(self.mat[i][j],6)) for j in range(self.m)) for i in range(self.n))
+        _ret = "\n".join(" ".join(str(self.mat[i][j]) for j in range(self.m)) for i in range(self.n))
         return _ret
     def __str__(self) -> str:
-        _ret = "\n".join(" ".join(str(round(self.mat[i][j],6)) for j in range(self.m)) for i in range(self.n))
+        _ret = "(\n  " + ",\n  ".join(str(tuple(round(self.mat[i][j], 6) for j in range(self.m))) for i in range(self.n)) + "\n)" 
         return _ret
     def __add__(self: "Matrix", other: "Matrix") -> "Matrix":
         if self.n != other.n or self.m != other.m:
@@ -455,59 +455,10 @@ class Matrix:
         
         inv_mat = [row[n:] for row in aug]
         return Matrix(inv_mat)
-    @classmethod
-    def read(cls, n: int, m: int) -> "Matrix":
-        """Чтение матрицы из ввода"""
-        a = []
-        has_float = False
-        
-        for _ in range(n):
-            row = input().split()
-            processed_row = []
-            
-            for num in row:
-                # Проверяем, можно ли представить как целое число
-                if num.isdigit() or (num.startswith('-') and num[1:].isdigit()):
-                    processed_row.append(int(num))
-                else:
-                    processed_row.append(float(num))
-                    has_float = True
-            
-            a.append(processed_row)
-        
-        # Если нашли хотя бы одно float, конвертируем все в float
-        if has_float:
-            a = [[float(x) for x in row] for row in a]
-        
-        return Matrix(a)
-    def is_int(self) -> bool:
-        """Проверка, что все элементы матрицы являются целыми числами"""
-        return all(self.mat[i][j] == int(self.mat[i][j]) for i in range(self.n) for j in range(self.m))
-    def gauss(self) -> "Matrix":
-        if self.n != self.m - 1:
-            raise ValueError("\u001b[31;1mМетод Гаусса применим только к расширенной матрице системы уравнений\u001b[0m")
-        a = [list(row) for row in self.mat]
-        n = self.n
-        m = self.m
-        for i in range(n):
-            max_row = i
-            for k in range(i + 1, n):
-                if abs(a[k][i]) > abs(a[max_row][i]):
-                    max_row = k
-            a[i], a[max_row] = a[max_row], a[i]
-            if abs(a[i][i]) < 1e-12:
-                raise ValueError("\u001b[31;1mСистема не имеет единственного решения\u001b[0m")
-            for k in range(i + 1, n):
-                factor = a[k][i] / a[i][i]
-                for j in range(i, m):
-                    a[k][j] -= factor * a[i][j]
-        x = [0 for _ in range(n)]
-        for i in range(n - 1, -1, -1):
-            x[i] = a[i][m - 1]
-            for j in range(i + 1, n):
-                x[i] -= a[i][j] * x[j]
-            x[i] /= a[i][i]
-        return Matrix([[xi] for xi in x])
 if __name__ == "__main__":
-    A = Matrix([[1,1,1,6], [2,5,7,33], [7,1,3,18]])
-    print(A.gauss())
+    n = int(input())
+    A = Matrix([list(map(int, input().split())) for _ in range(n)])
+    B = Matrix([list(map(int, input().split())) for _ in range(n)])
+    C = Matrix([list(map(int, input().split())) for _ in range(n)])
+    X = Matrix([list(map(int, input().split())) for _ in range(n)])
+    print(repr(A @ X + C.T @ X + B.T @ C))

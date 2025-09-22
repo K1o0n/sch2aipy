@@ -12,12 +12,12 @@ class Matrix:
         pass
 
     @property
-    def T(self) -> "Matrix":
+    def T(self) -> "Matrix": # транспонирование
         # напишите свою реализацию
         pass
 
     @classmethod
-    def eye(cls, size: int) -> "Matrix":
+    def eye(cls, size: int) -> "Matrix": # заполнение единичной матрицы
         # напишите свою реализацию
         pass
 
@@ -62,15 +62,16 @@ class Matrix:
         # напишите свою реализацию
         pass
 
-    def tr(self) -> "Matrix":
+    def tr(self) -> "Matrix": # транспонирование
         # напишите свою реализацию
         pass
 
-    def det(self) -> float:
+    def det(self) -> float: # определитель
         # напишите свою реализацию
         pass
 
-    def _get_minor(self, row: float, col: float) -> "Matrix":
+    def _get_minor(self, row: float, col: float) -> "Matrix": # дополнительная функция для подсчета определителя
+        # реализовывайте по желанию
         # напишите свою реализацию
         pass
 
@@ -82,7 +83,7 @@ class Matrix:
         # напишите свою реализацию
         pass
 
-    def norm(self, ord: str = 'fro') -> float:
+    def norm(self, ord: str = 'fro') -> float: # норма матрицы
         # напишите свою реализацию
         pass
 
@@ -90,8 +91,7 @@ class Matrix:
         # напишите свою реализацию
         pass
 
-
-    def copy(self) -> "Matrix":
+    def copy(self) -> "Matrix": 
         # напишите свою реализацию
         pass
 
@@ -124,7 +124,7 @@ class Matrix:
         pass
 
     @property
-    def inv(self) -> "Matrix":
+    def inv(self) -> "Matrix": # обратная матрица
         # напишите свою реализацию
         pass
 
